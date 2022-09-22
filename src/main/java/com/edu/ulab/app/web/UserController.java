@@ -1,6 +1,7 @@
 package com.edu.ulab.app.web;
 
-import com.edu.ulab.app.facade.UserDataFacade;
+//import com.edu.ulab.app.facade.UserDataFacade;
+import com.edu.ulab.app.facade.UserDataFacadeNew;
 import com.edu.ulab.app.web.constant.WebConstant;
 import com.edu.ulab.app.web.request.UserBookRequest;
 import com.edu.ulab.app.web.response.UserBookResponse;
@@ -22,9 +23,9 @@ import static com.edu.ulab.app.web.constant.WebConstant.RQID;
 @RequestMapping(value = WebConstant.VERSION_URL + "/user",
         produces = MediaType.APPLICATION_JSON_VALUE)
 public class UserController {
-    private final UserDataFacade userDataFacade;
+    private final UserDataFacadeNew userDataFacade;
 
-    public UserController(UserDataFacade userDataFacade) {
+    public UserController(UserDataFacadeNew userDataFacade) {
         this.userDataFacade = userDataFacade;
     }
 

@@ -1,4 +1,4 @@
-package com.edu.ulab.app.dto;
+package com.edu.ulab.app.entity;
 
 import lombok.*;
 
@@ -9,13 +9,14 @@ import java.util.Objects;
 @EqualsAndHashCode(callSuper = false)
 @NoArgsConstructor
 @AllArgsConstructor
-public class UserDto {
+public class BookEntity {
     @EqualsAndHashCode.Exclude
     private Long id;
-    private String fullName;
+    @EqualsAndHashCode.Exclude
+    private Long userId;
     private String title;
-    private int age;
-
+    private String author;
+    private long pageCount;
 
 
 }
