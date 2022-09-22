@@ -1,30 +1,18 @@
 package com.edu.ulab.app.entity;
 
-import lombok.Data;
-
-import java.util.Objects;
+import lombok.*;
 
 @Data
+@Builder
+@EqualsAndHashCode(callSuper = false)
+@NoArgsConstructor
+@AllArgsConstructor
 public class UserEntity {
-
+    @EqualsAndHashCode.Exclude
     private Long id;
     private String fullName;
     private String title;
     private int age;
 
 
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        UserEntity that = (UserEntity) o;
-        return age == that.age
-                && Objects.equals(title, that.title)
-                && Objects.equals(fullName, that.fullName);
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(fullName,title, age);
-    }
 }

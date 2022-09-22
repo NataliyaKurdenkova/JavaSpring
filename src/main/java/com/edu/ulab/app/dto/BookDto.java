@@ -1,29 +1,22 @@
 package com.edu.ulab.app.dto;
 
+import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.NoArgsConstructor;
 
 import java.util.Objects;
 
 @Data
+@EqualsAndHashCode(callSuper = false)
+@AllArgsConstructor
+@NoArgsConstructor
 public class BookDto {
+    @EqualsAndHashCode.Exclude
     private Long id;
+    @EqualsAndHashCode.Exclude
     private Long userId;
     private String title;
     private String author;
     private long pageCount;
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        BookDto bookDto = (BookDto) o;
-        return pageCount == bookDto.pageCount
-                && Objects.equals(title, bookDto.title)
-                && Objects.equals(author, bookDto.author);
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash( title, author, pageCount);
-    }
 }

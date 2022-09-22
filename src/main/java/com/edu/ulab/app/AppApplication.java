@@ -1,6 +1,6 @@
 package com.edu.ulab.app;
 
-import com.edu.ulab.app.repository.impl.RepositoryImpl;
+
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 

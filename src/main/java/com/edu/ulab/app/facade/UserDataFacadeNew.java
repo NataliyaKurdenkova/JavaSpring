@@ -3,11 +3,13 @@ package com.edu.ulab.app.facade;
 import com.edu.ulab.app.dto.BookDto;
 import com.edu.ulab.app.dto.UserDto;
 import com.edu.ulab.app.entity.UserWithBooks;
+import com.edu.ulab.app.exception.EntityNotFoundException;
 import com.edu.ulab.app.mapper.BookMapper;
 import com.edu.ulab.app.mapper.UserMapper;
-import com.edu.ulab.app.repository.impl.RepositoryImpl;
+import com.edu.ulab.app.repository.impl.UserWithBooksRepositoryImpl;
 import com.edu.ulab.app.service.BookService;
 import com.edu.ulab.app.service.UserService;
+import com.edu.ulab.app.service.UserWithBooksService;
 import com.edu.ulab.app.web.request.UserBookRequest;
 import com.edu.ulab.app.web.response.UserBookResponse;
 import lombok.extern.slf4j.Slf4j;
@@ -19,19 +21,24 @@ import java.util.Objects;
 
 @Slf4j
 @Component
-public class UserDataFacade {
-    public static RepositoryImpl repository = new RepositoryImpl();
+public class UserDataFacadeNew {
+
+    public static UserWithBooksRepositoryImpl repo = new UserWithBooksRepositoryImpl();
+
     private final UserService userService;
     private final BookService bookService;
+    private final UserWithBooksService userWithBooksService;
+
     private final UserMapper userMapper;
     private final BookMapper bookMapper;
 
-    public UserDataFacade(UserService userService,
-                          BookService bookService,
-                          UserMapper userMapper,
-                          BookMapper bookMapper) {
+    public UserDataFacadeNew(UserService userService,
+                             BookService bookService,
+                             UserWithBooksService userWithBooksService, UserMapper userMapper,
+                             BookMapper bookMapper) {
         this.userService = userService;
         this.bookService = bookService;
+        this.userWithBooksService = userWithBooksService;
         this.userMapper = userMapper;
         this.bookMapper = bookMapper;
     }
@@ -40,8 +47,10 @@ public class UserDataFacade {
         log.info("Got user book create request: {}", userBookRequest);
         UserDto userDto = userMapper.userRequestToUserDto(userBookRequest.getUserRequest());
         log.info("Mapped user request: {}", userDto);
+        if (userDto == null) throw new EntityNotFoundException("UserDto equals null. UserDto can't be null ");
 
         UserDto createdUser = userService.createUser(userDto);
+
         log.info("Created user: {}", createdUser);
 
         List<Long> bookIdList = userBookRequest.getBookRequests()
@@ -56,7 +65,7 @@ public class UserDataFacade {
                 .toList();
         log.info("Collected book ids: {}", bookIdList);
 
-        UserWithBooks userWithBooks = userService.createJoinUserAndBooks(createdUser.getId(), bookIdList);
+        UserWithBooks userWithBooks = userWithBooksService.createJoinUserAndBooks(createdUser.getId(), bookIdList);
         log.info("Created userWithBooks: {}", userWithBooks);
 
 
@@ -64,21 +73,13 @@ public class UserDataFacade {
                 .userId(userWithBooks.getUserId())
                 .booksIdList(userWithBooks.getBooksIdList())
                 .build();
-
-
     }
 
     public UserBookResponse updateUserWithBooks(UserBookRequest userBookRequest) {
         log.info("Got user book create request: {}", userBookRequest);
+
         UserDto userDto = userMapper.userRequestToUserDto(userBookRequest.getUserRequest());
         log.info("Mapped user request: {}", userDto);
-        UserDto updatedUser;
-        List<BookDto> bookDtosOld = new ArrayList<>();
-        try {
-            updatedUser = userService.getUser(userDto);
-        } catch (NullPointerException e) {
-            return createUserWithBooks(userBookRequest);
-        }
 
         List<BookDto> updBookDto = userBookRequest.getBookRequests()
                 .stream()
@@ -87,53 +88,64 @@ public class UserDataFacade {
                 .peek(mappedBookDto -> log.info("mapped book: {}", mappedBookDto))
                 .toList();
 
+        UserDto updatedUserOld;
 
-        userService.updateUser(updatedUser);
-        log.info("Update user: {}", updatedUser);
+        UserWithBooks userWithBooks;
 
-        try {
-            bookDtosOld = bookService.getListBooks(updatedUser.getId());
+        log.info("Get user in BD");
+        updatedUserOld = userService.getUser(userDto);
 
-        } catch (NullPointerException e) {
-            log.info(e.getMessage());
-
+        if (updatedUserOld==null) {
+            return createUserWithBooks(userBookRequest);
         }
 
-        bookService.updateBook(bookDtosOld, updBookDto, updatedUser.getId());
-        List<BookDto> list = bookService.getListBooks(updatedUser.getId());
+        userService.updateUser(updatedUserOld);
+        log.info("Update user: {}", updatedUserOld);
 
-        log.info("Update Books: {}", updBookDto);
+        List<BookDto> bookDtosOld = bookService.getListBooks(updatedUserOld.getId());
+
+        if (bookDtosOld.equals(null)) new EntityNotFoundException("bookDtosOld not found");
+
+        List<BookDto> bookDtos = bookService.updateBook(updBookDto, bookDtosOld, updatedUserOld.getId());
+
+        log.info("Update list books: {}", updBookDto);
+
+        userWithBooks = userWithBooksService.updateJoinUserAndBooks(updatedUserOld.getId(), bookDtos
+                .stream()
+                .map(BookDto::getId)
+                .toList());
+        log.info("Update userWithBooks: {}", userWithBooks);
+
         return UserBookResponse.builder()
-                .userId(updatedUser.getId())
-                .booksIdList(list.stream()
-                        .map(BookDto::getId)
-                        .toList())
+                .userId(userWithBooks.getUserId())
+                .booksIdList(userWithBooks.getBooksIdList())
                 .build();
-
-
     }
 
     public UserBookResponse getUserWithBooks(Long userId) {
-        UserWithBooks userWithBooks=new UserWithBooks();
-        try {
-            userWithBooks = userService.getUserWithBook(userId);
-        }catch (NullPointerException e){
-            log.info("userWithBooks not find");
-            log.info(e.getMessage());
-        }
+        log.info("get UserWithBooks by id: {}", userId);
+        UserWithBooks userWithBooks = userWithBooksService.getUserWithBook(userId);
+        if (userWithBooks==null) new EntityNotFoundException("userWithBooks not found");
 
-            return UserBookResponse.builder()
-                    .userId(userWithBooks.getUserId())
-                    .booksIdList(userWithBooks.getBooksIdList())
-                    .build();
+        return UserBookResponse.builder()
+                .userId(userWithBooks.getUserId())
+                .booksIdList(userWithBooks.getBooksIdList())
+                .build();
 
     }
 
     public void deleteUserWithBooks(Long userId) {
-        UserWithBooks userWithBooks = userService.getUserWithBook(userId);
+        log.info("delete UserWithBooks by id: {}", userId);
+        UserWithBooks userWithBooks = userWithBooksService.getUserWithBook(userId);
+        log.info("get UserWithBooks by id: {}", userWithBooks);
+        if (userWithBooks==null) new EntityNotFoundException("userWithBooks not found");
         userService.deleteUserById(userWithBooks.getUserId());
+        log.info("delete UserWithBooks by id: {}", userId);
         bookService.deleteBookById(userWithBooks.getBooksIdList());
-        userService.deleteJoinUserAndBooks(userWithBooks);
+        log.info("delete Books");
+        userWithBooksService.deleteJoinUserAndBooks(userWithBooks);
+        log.info("delete UserWithBooks");
 
     }
+
 }

@@ -1,19 +1,17 @@
 package com.edu.ulab.app.entity;
 
-import lombok.Data;
+import lombok.*;
 
 import java.util.List;
 
 @Data
+@Builder
+@EqualsAndHashCode(callSuper = false)
+@NoArgsConstructor
+@AllArgsConstructor
 public class UserWithBooks {
     private Long userId;
     private List<Long> booksIdList;
 
-    public UserWithBooks(Long userId, List<Long> booksIdList) {
-        this.userId = userId;
-        this.booksIdList = booksIdList;
-    }
 
-    public UserWithBooks() {
-    }
 }
